@@ -1,1 +1,1 @@
-"""Northcause FastAPI application package."""
+"""NorthCause FastAPI application package."""
