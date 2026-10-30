@@ -124,6 +124,11 @@ class CsrfError extends Error {}
 class RateLimited extends Error {}
 
 async function form(c: Context<AppEnv>): Promise<Record<string, string | File>> {
+  // Reject oversized bodies before Hono parses multipart content into memory.
+  // Keep headroom for multipart boundaries/fields; individual evidence files
+  // are still capped by validateEvidence after parsing.
+  const length = Number(c.req.header('content-length') ?? 0);
+  if (Number.isFinite(length) && length > 2_250_000) throw new Error('Request body exceeds the 2 MiB upload limit.');
   const body = await c.req.parseBody();
   const out: Record<string, string | File> = {};
   for (const [k, v] of Object.entries(body)) if (typeof v === 'string' || v instanceof File) out[k] = v;
