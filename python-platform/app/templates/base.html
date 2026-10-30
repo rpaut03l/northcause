@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#ffffff">
-  <meta name="description" content="Northcause connects AI reliability, security, and release evidence—from GPU to production.">
-  <title>{% block title %}Northcause{% endblock %}</title>
+  <meta name="description" content="NorthCause connects AI reliability, security, and release evidence—from GPU to production.">
+  <title>{% block title %}NorthCause{% endblock %}</title>
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/static/northcause.css">
   <link rel="stylesheet" href="/static/professional.css">
@@ -14,7 +14,7 @@
 <a class="skip-link" href="#main">Skip to content</a>
 <header class="topbar">
   <div class="topbar-inner wrap">
-    <a class="brand" href="/" aria-label="Northcause home"><span class="brand-mark" aria-hidden="true">N</span><span>Northcause</span></a>
+    <a class="brand" href="/" aria-label="NorthCause home"><img class="brand-mark" src="/static/northcause-mark.svg" alt=""><span>NorthCause</span></a>
     <nav class="primary-nav" aria-label="Main navigation">
       <a href="/product" {% if active=='product' %}aria-current="page"{% endif %}>Platform</a>
       <a href="/security" {% if active=='security' %}aria-current="page"{% endif %}>Security</a>
@@ -31,6 +31,6 @@
 
 {% if flash %}<div class="wrap flash" role="status">{{ flash }}</div>{% endif %}
 <main id="main">{% block content %}{% endblock %}</main>
-<footer class="footer"><div class="wrap footer-grid"><div><a class="brand" href="/"><span class="brand-mark">N</span><span>Northcause</span></a><p>Find the cause. Verify the fix.</p></div><div class="footer-links"><a href="/product">Platform</a><a href="/security">Security</a><a href="/docs">Docs</a><a href="/pricing">Pricing</a><a href="/contact">Contact</a></div><p class="footer-note">Investigate AI incidents with connected evidence and reviewable release checks. Pilot capabilities and integrations are described as they exist today.</p><small>© {{ current_year|default('2026') }} Northcause · <a href="/security">Security</a> · <a href="/contact">Contact</a></small></div></footer>
+<footer class="footer"><div class="wrap footer-grid"><div><a class="brand" href="/"><img class="brand-mark" src="/static/northcause-mark.svg" alt=""><span>NorthCause</span></a><p>Find the cause. Verify the fix.</p></div><div class="footer-links"><a href="/product">Platform</a><a href="/security">Security</a><a href="/docs">Docs</a><a href="/pricing">Pricing</a><a href="/contact">Contact</a></div><p class="footer-note">Investigate AI incidents with connected evidence and reviewable release checks. Pilot capabilities and integrations are described as they exist today.</p><small>© {{ current_year|default('2026') }} NorthCause · <a href="/security">Security</a> · <a href="/contact">Contact</a></small></div></footer>
 {% block scripts %}{% endblock %}
 </body></html>
