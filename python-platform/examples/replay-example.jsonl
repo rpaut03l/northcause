@@ -1,0 +1,3 @@
+{"expected":"The policy permits 30 days of retention.","baseline":"The policy permits 30 days of retention.","candidate":"The policy permits 30 days of retention."}
+{"expected":"Cite the source document.","baseline":"Cite the source document.","candidate":"Here is the answer without a citation."}
+{"expected":"Escalate when confidence is low.","baseline":"Escalate when confidence is low.","candidate":"Escalate when confidence is low."}
