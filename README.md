@@ -45,8 +45,8 @@ The deployment job remains skipped until the preview variable is enabled. This k
 - Analysis is deterministic local pattern matching, not an LLM diagnosis. Findings are hypotheses with source references.
 - Evidence is stored locally in SQLite and local files. Common secret-like patterns are masked, but masking is not a complete secret detector.
 - This pilot has account sign-in and per-account incident scoping, but no organization/tenant administration, SSO, MFA, or billing.
-- It does not include live OpenTelemetry, cloud, Kubernetes, model-provider, or CI/CD connectors. Evidence is uploaded manually.
+- This branch adds opt-in OTLP JSON ingestion, signed GitHub push/deployment webhooks, optional customer-configured semantic judging, Ed25519 replay proof records, and a user-authenticated SOS intake. See [`docs/live-integrations.md`](docs/live-integrations.md) for configuration and data boundaries.
 - Remediation is a human-reviewed draft. NorthCause does not run commands or modify customer systems.
-- This configuration is for local evaluation. Do not deploy it as a customer-facing interactive service or upload sensitive production data without a separate security and hosting review.
+- SOS intake is not staffed, does not provide a response SLA, and does not perform automatic containment. The Cloudflare Pages artifact remains a static visual preview; it does not host FastAPI or the integration API. Do not deploy the Python service as a customer-facing interactive service or upload sensitive production data without a separate security and hosting review.
 
 See [`python-platform/README.md`](python-platform/README.md) for setup and implementation details.

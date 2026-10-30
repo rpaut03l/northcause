@@ -7,7 +7,7 @@ name = "northcause-python"
 version = "0.1.0"
 description = "NorthCause evidence-led AI operations assurance pilot"
 requires-python = ">=3.11"
-dependencies = ["fastapi>=0.115", "uvicorn[standard]>=0.30", "jinja2>=3.1", "python-multipart>=0.0.9"]
+dependencies = ["fastapi>=0.115", "uvicorn[standard]>=0.30", "jinja2>=3.1", "python-multipart>=0.0.9", "cryptography>=43.0"]
 
 [project.optional-dependencies]
 cloudflare = ["workers-py", "workers-runtime-sdk"]

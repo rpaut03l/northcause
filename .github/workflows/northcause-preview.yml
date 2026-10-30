@@ -44,7 +44,7 @@ jobs:
           retention-days: 7
 
   deploy-cloudflare-preview:
-    if: github.event_name == 'pull_request' && vars.CLOUDFLARE_PAGES_PREVIEW == 'true' && vars.CLOUDFLARE_PAGES_PROJECT != ''
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && vars.CLOUDFLARE_PAGES_PREVIEW == 'true' && vars.CLOUDFLARE_PAGES_PROJECT != ''
     needs: test-and-build-preview
     runs-on: ubuntu-latest
     steps:
@@ -53,8 +53,18 @@ jobs:
           name: northcause-pages-preview
           path: dist
       - name: Deploy branch preview to Cloudflare Pages
+        id: deploy
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy dist --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT }} --branch=pr-${{ github.event.pull_request.number }}
+      - name: Publish preview URL
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.pages-deployment-alias-url || steps.deploy.outputs.deployment-url }}
+        run: |
+          if [[ -n "$DEPLOYMENT_URL" ]]; then
+            echo "Cloudflare visual preview: $DEPLOYMENT_URL" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Cloudflare Pages accepted deployment, but did not return a preview URL." >> "$GITHUB_STEP_SUMMARY"
+          fi
