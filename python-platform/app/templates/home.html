@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}NorthCause - Find the cause. Verify the fix.{% endblock %}
+{% block content %}
+<section class="hero wrap">
+  <div class="hero-copy">
+    <div class="eyebrow"><span class="eyebrow-dot"></span> AI INCIDENT INVESTIGATION, GROUNDED IN EVIDENCE</div>
+    <h1><span class="hero-line">Find the cause.</span><br><span>Verify the fix.</span></h1>
+    <h2>Make production AI incidents easier to understand and safer to resolve.</h2>
+    <p>Bring model traces, retrieval evidence, service logs, infrastructure signals, and release changes into one reviewable investigation. See what the evidence supports, record a human decision, and check the result before release.</p>
+    <div class="hero-actions"><a class="button" href="/demo">Explore a sample incident <span aria-hidden="true">→</span></a><a class="button button-secondary" href="/contact">Discuss a pilot</a></div>
+    <div class="hero-proof"><span><b>Evidence-linked</b> findings keep sources in view</span><span><b>Human-reviewed</b> decisions stay with your team</span></div>
+  </div>
+  <div class="hero-product" aria-label="Illustrative NorthCause incident investigation preview">
+    <div class="incident-window">
+      <div class="incident-window-top"><div class="window-brand"><img class="mini-mark" src="/static/northcause-mark.svg" alt=""> NorthCause <span class="preview-label">SAMPLE INCIDENT</span></div><span class="incident-status">Investigating</span></div>
+      <div class="incident-workspace">
+        <aside class="incident-nav" aria-label="Sample workspace navigation"><b class="nav-selected">Incidents</b><span>Investigations</span><span>Evidence</span><span>Traces</span><span>Evaluations</span><span>Releases</span></aside>
+        <div class="incident-content">
+          <div class="incident-title-row"><div><span class="eyebrow">NC-104 · PRODUCTION · SAMPLE DATA</span><h2>Support assistant responses degraded</h2><p>RAG assistant · reported after a retrieval configuration change</p></div><span class="severity-badge">High priority</span></div>
+          <div class="incident-tabs"><span class="active">Timeline</span><span>Evidence</span><span>Findings</span><span>Verification</span></div>
+          <ol class="event-timeline"><li><span class="event-dot red"></span><div><small>10:23 UTC · ALERT</small><b>Answer quality alert opened</b><span>Increase in low-confidence responses</span></div></li><li><span class="event-dot blue"></span><div><small>10:28 UTC · TRACE</small><b>Related model traces attached</b><span>Request and retrieval spans aligned</span></div></li><li><span class="event-dot violet"></span><div><small>10:35 UTC · EVIDENCE</small><b>Retrieval change found for review</b><span>Release note linked to source evidence</span></div></li></ol>
+          <div class="incident-panels">
+            <section class="incident-panel"><h3>Evidence connected <a href="/demo">View sample →</a></h3><div class="evidence-chip"><span>⌁</span><b>Model traces</b><small>3 related traces</small></div><div class="evidence-chip"><span>▤</span><b>Service logs</b><small>12 relevant lines</small></div><div class="evidence-chip"><span>◇</span><b>Retrieval output</b><small>Configuration change</small></div></section>
+            <section class="incident-panel finding-panel"><h3>Finding for review</h3><p>A retrieval configuration change may have affected which sources were returned. Review the cited evidence before treating this as a cause.</p><span class="finding-citation">Evidence-linked hypothesis · human review required</span></section>
+          </div>
+          <div class="verification-bar"><span class="verification-icon">✓</span><div><b>Verification is a separate step</b><small>Attach follow-up evidence and record the reviewer decision before release.</small></div><span class="review-pill">Pending review</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="preview-caption"><span>PRODUCT PREVIEW</span><span>Illustrative interface · fictional sample data</span></div>
+  </div>
+</section>
+
+<section class="section wrap home-capabilities" aria-labelledby="capabilities-title">
+  <div class="section-heading"><div><span class="eyebrow">FROM ALERT TO VERIFIED FIX</span><h2 id="capabilities-title">One incident. The context to act with confidence.</h2><p class="section-intro">NorthCause gives AI platform, SRE, and ML platform teams a shared place to inspect what changed and why.</p></div><a class="text-link blue-link" href="/product">Explore the platform →</a></div>
+  <div class="feature-grid"><a class="feature-card" href="/product#incidents"><span class="feature-icon">⌕</span><h3>Connect the evidence</h3><p>Bring traces, logs, retrieval activity, infrastructure events, and release notes into a single incident record.</p><b>Evidence stays linked to its source →</b></a><a class="feature-card" href="/product#incidents"><span class="feature-icon purple">◇</span><h3>Investigate with context</h3><p>Build a time-aligned view, review findings against source material, and record what remains uncertain.</p><b>Keep hypotheses reviewable →</b></a><a class="feature-card" href="/product#release"><span class="feature-icon green">✓</span><h3>Verify before release</h3><p>Attach follow-up evidence, compare the observed behavior, and keep the final decision with a human reviewer.</p><b>Make the outcome auditable →</b></a></div>
+</section>
+
+<section class="workflow-band wrap" aria-label="NorthCause incident workflow"><div class="workflow-heading"><span class="eyebrow">A CONTROLLED WORKFLOW</span><h2>Move from signal to evidence-backed decision.</h2></div><div class="workflow-steps"><div><span>01</span><strong>Alert</strong><small>Capture the incident and environment.</small></div><i aria-hidden="true">→</i><div><span>02</span><strong>Connect evidence</strong><small>Gather the signals around the change.</small></div><i aria-hidden="true">→</i><div><span>03</span><strong>Investigate</strong><small>Review source-linked findings.</small></div><i aria-hidden="true">→</i><div><span>04</span><strong>Human review</strong><small>Record the decision and rationale.</small></div><i aria-hidden="true">→</i><div><span>05</span><strong>Verify</strong><small>Check follow-up evidence.</small></div></div></section>
+
+<section class="pilot-note wrap"><span class="pilot-note-icon">i</span><p><strong>Built transparently for an early pilot.</strong> The current local build accepts text evidence uploads and uses deterministic rules. Live telemetry connectors and model-generated diagnoses are not part of this pilot.</p><a href="/security">Review the current scope →</a></section>
+
+<section class="cta-band"><div class="wrap cta-inner"><div><span class="eyebrow">START WITH ONE REAL WORKFLOW</span><h2>Bring one hard-to-debug AI incident.</h2><p>Walk through the evidence your team uses today and scope a focused pilot around it.</p></div><div><a class="button" href="/contact">Discuss a pilot →</a><a class="button button-secondary" href="/demo">Open the sample</a></div></div></section>
+{% endblock %}
