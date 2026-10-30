@@ -27,6 +27,8 @@ Public product/security/docs/pricing/contact pages, login/admin provisioning, in
 
 The Reliability Replay accepts UTF-8 JSONL with one object per line and non-empty string fields `expected`, `baseline`, and `candidate`. It compares exact-match rates, requires the candidate to meet the user-supplied threshold and not regress against baseline, and records only aggregate metrics plus the source file SHA-256. The input payload is evaluated in memory and is not stored. Start with [`examples/replay-example.jsonl`](examples/replay-example.jsonl). This is a narrow deterministic check, not a semantic quality or safety evaluator; use task-specific reviewed evaluators before making production release decisions. The feature has no live telemetry ingestion or model-provider integration.
 
+See [`../docs/northcause-product-blueprint.md`](../docs/northcause-product-blueprint.md) for the proposed product scope, integration sequence, data model, deployment direction, pricing hypotheses, and roadmap. Proposal items are marked separately from current pilot capabilities.
+
 The analyser is deterministic rules, not an LLM. No external model call, GitHub integration, OpenTelemetry ingestion, automatic production changes, tenant provisioning UI, billing, or MFA/SSO is implemented in this parallel slice. Do not use customer data until security review and deployment-specific storage/auth controls are complete.
 
 ## GitHub and Cloudflare preview

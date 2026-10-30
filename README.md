@@ -4,6 +4,8 @@ NorthCause helps teams investigate AI production incidents, connect them to rele
 
 The local Python pilot now includes Reliability Replay: a small, deterministic paired check that compares candidate outputs with reviewed expected/baseline examples and holds regressions before release review. It is a first vertical slice, not an AI diagnosis engine or live telemetry integration.
 
+The product direction, customer gap hypothesis, architecture, pricing assumptions, and delivery roadmap are documented in [`docs/northcause-product-blueprint.md`](docs/northcause-product-blueprint.md). This is a proposal and is not a description of shipped integrations.
+
 NorthCause is a product of **Narmadaya Innovations Pvt Ltd**. Visit the parent company at [narmadaya.com](https://narmadaya.com/).
 
 This repository includes a standalone Python/FastAPI pilot under [`python-platform/`](python-platform/README.md). The public pages explain the workflow; the local workspace supports incident records, development/staging/production context, bounded text evidence uploads, deterministic evidence scanning, human-reviewed remediation drafts, and an audit view.
