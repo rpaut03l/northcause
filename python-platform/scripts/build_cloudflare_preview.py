@@ -16,7 +16,7 @@ sys.path.insert(0, str(ROOT))
 from fastapi.testclient import TestClient  # noqa: E402
 from app.main import app  # noqa: E402
 
-ROUTES = ("/", "/product", "/security", "/docs", "/pricing", "/demo", "/contact", "/login")
+ROUTES = ("/", "/product", "/evidence-loop", "/security", "/docs", "/pricing", "/demo", "/contact", "/login")
 NOTICE = (
     '<aside class="static-preview-notice" role="status" tabindex="0">'
     'Cloudflare visual preview - interactive workflows run locally on port 8888.'
