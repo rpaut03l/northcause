@@ -1,0 +1,37 @@
+name = "northcause"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "public"
+binding = "ASSETS"
+
+[vars]
+APP_ENV = "development"
+# Set to "true" only where a self-serve sandbox should be offered.
+SANDBOX_ENABLED = "false" # set "true" per environment where a public sandbox is wanted
+
+[[d1_databases]]
+binding = "DB"
+database_name = "northcause-db"
+database_id = "00000000-0000-0000-0000-000000000000" # local only; replace for staging
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "EVIDENCE"
+bucket_name = "northcause-evidence"
+
+[triggers]
+crons = ["17 * * * *"] # hourly retention sweep
+
+[env.staging]
+name = "northcause-staging"
+vars = { APP_ENV = "staging", SANDBOX_ENABLED = "true" }
+triggers = { crons = ["17 * * * *"] }
+d1_databases = [
+  { binding = "DB", database_name = "northcause-db-staging", database_id = "REPLACE_WITH_STAGING_D1_ID", migrations_dir = "migrations" }
+]
+r2_buckets = [
+  { binding = "EVIDENCE", bucket_name = "northcause-evidence-staging" }
+]
