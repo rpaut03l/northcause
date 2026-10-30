@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ incident['title'] }} · Northcause{% endblock %}
+{% block title %}{{ incident['title'] }} · NorthCause{% endblock %}
 {% block content %}
 <main class="container page-space">
   <div class="crumbs"><a href="/app">Workspace</a><span>›</span><span>Incident</span></div>
@@ -15,7 +15,7 @@
         {% if not evidence %}<div class="empty compact"><span class="empty-icon">▤</span><h3>Add evidence to begin</h3><p>Upload relevant logs or diagnostic files to build the incident record.</p></div>{% endif %}
       </article>
       <article class="panel" id="analysis"><div class="panel-head"><div><h2>Investigation results</h2><p>Findings are hypotheses and must be reviewed.</p></div><form method="post" action="/app/incidents/{{ incident['id'] }}/investigate"><input type="hidden" name="token" value="{{ csrf }}"><button class="button primary small" type="submit">Run local analysis</button></form></div>
-        {% if investigations %}<div class="notice"><strong>Analysis is rule-based, not an AI model.</strong><p>Northcause searches supported incident evidence for known signatures. Results do not prove a cause.</p></div><pre class="result-json">{{ investigations[0]['result'] }}</pre>{% else %}<div class="notice"><strong>No analysis has been run.</strong><p>Add evidence first, then run the local signature analyzer. If the evidence does not match a known pattern, no cause will be asserted.</p></div>{% endif %}
+        {% if investigations %}<div class="notice"><strong>Analysis is rule-based, not an AI model.</strong><p>NorthCause searches supported incident evidence for known signatures. Results do not prove a cause.</p></div><pre class="result-json">{{ investigations[0]['result'] }}</pre>{% else %}<div class="notice"><strong>No analysis has been run.</strong><p>Add evidence first, then run the local signature analyzer. If the evidence does not match a known pattern, no cause will be asserted.</p></div>{% endif %}
       </article>
       <article class="panel" id="evidence"><div class="panel-head"><div><h2>Evidence files</h2><p>Text files only · Maximum 2 MiB per file</p></div></div>
         {% if evidence %}<div class="evidence-list">{% for ev in evidence %}<div class="evidence-row"><span class="file-icon">▤</span><div><strong><a href="/app/evidence/{{ ev['id'] }}">{{ ev['label'] }}</a></strong><small>{{ ev['created'] }} · {{ ev['bytes'] }} bytes · SHA-256 {{ ev['sha256'][:20] }}…</small></div><span class="badge supported">Stored</span></div>{% endfor %}</div>{% else %}<p class="muted">Nothing uploaded yet. Choose a file below to add evidence.</p>{% endif %}
