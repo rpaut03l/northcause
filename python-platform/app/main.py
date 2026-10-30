@@ -8,6 +8,7 @@ from fastapi import FastAPI, Request, Form, UploadFile, File, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from .replay import evaluate_jsonl, ReplayInputError
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = Path(os.getenv("NORTHCAUSE_DATA", ROOT / "var"))
@@ -16,7 +17,7 @@ DB_PATH = Path(os.getenv("NORTHCAUSE_DB", DATA / "northcause.sqlite3"))
 EVIDENCE_DIR = Path(os.getenv("NORTHCAUSE_EVIDENCE", DATA / "evidence"))
 EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
 MAX_UPLOAD = 2 * 1024 * 1024
-ALLOWED = {".log", ".txt", ".json", ".ndjson", ".csv", ".yaml", ".yml"}
+ALLOWED = {".log", ".txt", ".json", ".ndjson", ".jsonl", ".csv", ".yaml", ".yml"}
 SESSION_TTL = 8 * 3600
 app = FastAPI(title="NorthCause", docs_url=None, redoc_url=None)
 app.mount("/static", StaticFiles(directory=ROOT / "app" / "static"), name="static")
@@ -48,6 +49,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS drafts(id TEXT PRIMARY KEY,incident_id TEXT NOT NULL,body TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'pending',review_reason TEXT,created TEXT NOT NULL,FOREIGN KEY(incident_id) REFERENCES incidents(id) ON DELETE CASCADE);
         CREATE TABLE IF NOT EXISTS audit(id INTEGER PRIMARY KEY AUTOINCREMENT,actor TEXT,action TEXT NOT NULL,target TEXT,details TEXT,created TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS contacts(id TEXT PRIMARY KEY,name TEXT NOT NULL,email TEXT NOT NULL,company TEXT,message TEXT NOT NULL,created TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS replay_runs(id TEXT PRIMARY KEY,incident_id TEXT NOT NULL,user_id TEXT NOT NULL,summary TEXT NOT NULL,created TEXT NOT NULL,FOREIGN KEY(incident_id) REFERENCES incidents(id) ON DELETE CASCADE,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE);
         """)
         # Keep existing local pilot databases usable after adding environment context.
         incident_columns = {row["name"] for row in c.execute("PRAGMA table_info(incidents)")}
@@ -94,7 +96,7 @@ async def security(request: Request, call_next):
 
 def page(request: Request, name: str, **ctx):
     token = csrf(request)
-    active = {"/product": "product", "/security": "security", "/docs": "docs", "/pricing": "pricing"}.get(request.url.path, "")
+    active = {"/product": "product", "/evidence-loop": "evidence_loop", "/security": "security", "/docs": "docs", "/pricing": "pricing"}.get(request.url.path, "")
     return templates.TemplateResponse(request=request,name=name,context={"user":request.state.user,"csrf":token,"csrf_token":token,"active":active,**ctx})
 def require_user(request: Request):
     user=request.state.user
@@ -114,6 +116,8 @@ def get_incident(incident_id: str, user):
 def home(request: Request): return page(request,"home.html",title="Find it. Fix it. Prove it.")
 @app.get("/product",response_class=HTMLResponse)
 def product(request: Request): return page(request,"product.html",title="Product")
+@app.get("/evidence-loop",response_class=HTMLResponse)
+def evidence_loop(request: Request): return page(request,"evidence_loop.html",title="Evidence Loop")
 @app.get("/security",response_class=HTMLResponse)
 def security_page(request: Request): return page(request,"security.html",title="Security")
 @app.get("/docs",response_class=HTMLResponse)
@@ -184,7 +188,40 @@ def incident_detail(request: Request,incident_id: str):
         evidence=c.execute("SELECT id,label,sha256,created,length(body) bytes FROM evidence WHERE incident_id=? ORDER BY created",(incident_id,)).fetchall()
         investigations=c.execute("SELECT * FROM investigations WHERE incident_id=? ORDER BY created DESC",(incident_id,)).fetchall()
         drafts=c.execute("SELECT * FROM drafts WHERE incident_id=? ORDER BY created DESC",(incident_id,)).fetchall()
-    return page(request,"incident.html",title=incident["title"],incident=incident,evidence=evidence,investigations=investigations,drafts=drafts)
+        replay_runs=c.execute("SELECT id,summary,created FROM replay_runs WHERE incident_id=? AND user_id=? ORDER BY created DESC LIMIT 10",(incident_id,u["id"])).fetchall()
+    return page(request,"incident.html",title=incident["title"],incident=incident,evidence=evidence,investigations=investigations,drafts=drafts,replay_runs=replay_runs)
+
+@app.get("/app/incidents/{incident_id}/replay",response_class=HTMLResponse)
+def replay_page(request: Request,incident_id: str):
+    u=require_user(request); incident=get_incident(incident_id,u)
+    with db() as c:
+        rows=c.execute("SELECT summary,created FROM replay_runs WHERE incident_id=? AND user_id=? ORDER BY created DESC LIMIT 10",(incident_id,u["id"])).fetchall()
+    runs=[{"summary":json.loads(row["summary"]),"created":row["created"]} for row in rows]
+    return page(request,"replay.html",title="Reliability Replay",incident=incident,runs=runs,error=None,result=runs[0]["summary"] if runs else None)
+
+@app.post("/app/incidents/{incident_id}/replay",response_class=HTMLResponse)
+async def replay_run(request: Request,incident_id: str,file: UploadFile=File(...),threshold: Annotated[float,Form()]=80,token:Annotated[str,Form()]=""):
+    u=check_csrf(request,token); incident=get_incident(incident_id,u)
+    if Path(file.filename or "").suffix.lower() not in {".jsonl", ".ndjson"}:
+        raise HTTPException(415,"Upload a JSONL or NDJSON replay set")
+    if not 0 <= threshold <= 100:
+        raise HTTPException(400,"Threshold must be between 0 and 100 percent")
+    raw=await file.read(MAX_UPLOAD+1)
+    if len(raw)>MAX_UPLOAD:
+        raise HTTPException(413,"Replay file exceeds 2 MiB")
+    digest=hashlib.sha256(raw).hexdigest()
+    try:
+        evaluated=evaluate_jsonl(raw,threshold,digest)
+    except ReplayInputError as exc:
+        with db() as c:
+            rows=c.execute("SELECT summary,created FROM replay_runs WHERE incident_id=? AND user_id=? ORDER BY created DESC LIMIT 10",(incident_id,u["id"])).fetchall()
+        runs=[{"summary":json.loads(row["summary"]),"created":row["created"]} for row in rows]
+        return page(request,"replay.html",title="Reliability Replay",incident=incident,runs=runs,error=str(exc),result=runs[0]["summary"] if runs else None)
+    summary={"cases":evaluated.cases,"baseline_passes":evaluated.baseline_passes,"candidate_passes":evaluated.candidate_passes,"baseline_rate":evaluated.baseline_rate,"candidate_rate":evaluated.candidate_rate,"threshold":evaluated.threshold,"gate":evaluated.gate,"source_sha256":evaluated.source_sha256}
+    with db() as c:
+        c.execute("INSERT INTO replay_runs VALUES(?,?,?,?,?)",(uid("replay"),incident_id,u["id"],json.dumps(summary),now()))
+    audit(u["id"],"replay.run",incident_id,{"cases":evaluated.cases,"gate":evaluated.gate,"source_sha256":digest,"metric":"exact_match"})
+    return RedirectResponse(f"/app/incidents/{incident_id}/replay",303)
 @app.post("/app/incidents/{incident_id}/evidence")
 async def upload(request: Request,incident_id: str,label:Annotated[str,Form()]="evidence",file:UploadFile=File(...),token:Annotated[str,Form()]=""):
     u=check_csrf(request,token);get_incident(incident_id,u)

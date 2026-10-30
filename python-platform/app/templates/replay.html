@@ -1,0 +1,26 @@
+{% extends 'base.html' %}{% block title %}Reliability Replay · NorthCause{% endblock %}{% block content %}
+<section class="workspace wrap">
+  <div class="crumbs"><a href="/app">Workspace</a><span>›</span><span>Reliability Replay</span></div>
+  <div class="workspace-head"><div><span class="eyebrow">EVIDENCE LOOP · LOCAL PILOT</span><h1>Reliability Replay</h1><p class="muted">Compare a candidate model or prompt change against reviewed examples from an incident.</p></div><a class="button button-secondary" href="/app/incidents/{{ incident.id }}">Back to incident</a></div>
+  {% if error %}<div class="notice error" role="alert"><strong>Replay not run</strong><p>{{ error }}</p></div>{% endif %}
+  <div class="replay-grid">
+    <section class="surface replay-card"><div class="surface-heading"><div><h2>{{ incident.title }}</h2><p>{{ incident.service }} · {{ incident.environment }} · {{ incident.severity }}</p></div><span class="badge {{ incident.severity }}">{{ incident.severity }}</span></div>
+      <div class="notice subtle"><strong>What this check measures</strong><p>Exact-match accuracy for expected, baseline, and candidate strings. It does not judge semantic quality, safety, or whether a result is useful. Review the cases and add task-specific evaluators before using this as a production release gate.</p></div>
+      <form class="form-stack replay-form" method="post" enctype="multipart/form-data" action="/app/incidents/{{ incident.id }}/replay">
+        <input type="hidden" name="token" value="{{ csrf }}">
+        <label for="dataset">Reviewed evaluation examples <span class="optional">JSONL, up to 2 MiB</span></label>
+        <p class="fine-print">Each line must be a JSON object with non-empty string fields: <code>expected</code>, <code>baseline</code>, and <code>candidate</code>. Payloads are scored in memory and are not saved.</p>
+        <input id="dataset" type="file" name="file" accept=".jsonl,.ndjson" required>
+        <label for="threshold">Minimum candidate exact-match rate (%)</label><input id="threshold" type="number" name="threshold" value="80" min="0" max="100" step="1" required>
+        <button class="button primary" type="submit">Run paired replay</button>
+      </form>
+    </section>
+    <aside class="surface replay-card"><span class="eyebrow">INPUT FORMAT</span><h2>One reviewed case per line</h2><pre class="result-json">{"expected":"Answer cites the policy","baseline":"Answer cites the policy","candidate":"No citation included"}
+{"expected":"Return the current limit","baseline":"Limit is 50","candidate":"Limit is 50"}</pre><p class="fine-print">Use sanitized, approved examples. This local pilot does not ingest OpenTelemetry traces or call an external model.</p></aside>
+  </div>
+  {% if result %}<section class="surface replay-result"><div class="surface-heading"><div><span class="eyebrow">LATEST PAIRED REPLAY · {{ runs[0].created if runs else 'JUST NOW' }}</span><h2>Candidate {{ 'passes' if result.gate == 'pass' else 'held' }} the configured check</h2><p>Exact match is a narrow signal; a reviewer should inspect the examples before making a release decision.</p></div><span class="badge {{ 'approved' if result.gate == 'pass' else 'pending' }}">{{ result.gate|upper }}</span></div>
+    <div class="replay-metrics"><article><span>Reviewed cases</span><strong>{{ result.cases }}</strong></article><article><span>Baseline exact match</span><strong>{{ result.baseline_rate }}%</strong><small>{{ result.baseline_passes }}/{{ result.cases }} cases</small></article><article><span>Candidate exact match</span><strong>{{ result.candidate_rate }}%</strong><small>{{ result.candidate_passes }}/{{ result.cases }} cases</small></article><article><span>Required threshold</span><strong>{{ result.threshold }}%</strong></article></div>
+    <div class="notice {{ 'success' if result.gate == 'pass' else 'warning' }}"><strong>{{ 'Candidate clears threshold and does not regress against baseline.' if result.gate == 'pass' else 'Hold release: candidate is below threshold or regresses against baseline.' }}</strong><p>Source fingerprint: SHA-256 {{ result.source_sha256[:24] }}… · The uploaded example payload was not persisted.</p></div>
+  </section>{% endif %}
+  {% if runs|length > 1 %}<section class="surface replay-history"><h2>Earlier replay checks</h2><div class="table-wrap"><table><thead><tr><th>Run</th><th>Cases</th><th>Baseline</th><th>Candidate</th><th>Threshold</th><th>Gate</th></tr></thead><tbody>{% for run in runs[1:] %}{% set item = run.summary %}<tr><td>{{ run.created }}</td><td>{{ item.cases }}</td><td>{{ item.baseline_rate }}%</td><td>{{ item.candidate_rate }}%</td><td>{{ item.threshold }}%</td><td><span class="badge {{ 'approved' if item.gate == 'pass' else 'pending' }}">{{ item.gate }}</span></td></tr>{% endfor %}</tbody></table></div></section>{% endif %}
+</section>{% endblock %}
