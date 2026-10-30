@@ -1,0 +1,1 @@
+"""Northcause FastAPI application package."""

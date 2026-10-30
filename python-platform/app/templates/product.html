@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Platform · Northcause{% endblock %}
+{% block content %}
+<main class="container page-space">
+  <div class="page-heading center">
+    <div class="eyebrow">THE NORTHCAUSE PLATFORM</div>
+    <h1>One evidence trail.<br><span class="accent">From alert to safe release.</span></h1>
+    <p>Connect an AI production incident to the traces, retrieval activity, infrastructure signals, and release changes that help your team investigate and verify the fix.</p>
+  </div>
+  <section class="stack-map" aria-label="Northcause evidence workflow">
+    <div class="stack-sources">
+      <div><span class="source-icon">⌁</span><strong>Application traces</strong><small>Requests · model calls</small></div>
+      <div><span class="source-icon">◇</span><strong>RAG &amp; agents</strong><small>Retrieval · tools · evals</small></div>
+      <div><span class="source-icon">▦</span><strong>Infrastructure</strong><small>GPU · Linux · Kubernetes</small></div>
+      <div><span class="source-icon">⌘</span><strong>Release evidence</strong><small>Builds · tests · changes</small></div>
+    </div>
+    <div class="stack-core"><div class="brand-mark mini">N</div><div><strong>Northcause investigation</strong><small>Connect · review · verify</small></div></div>
+    <div class="stack-outcomes"><span>Investigate</span><b>→</b><span>Review</span><b>→</b><span>Verify</span></div>
+  </section>
+  <section class="product-assurance-grid">
+    <article class="feature-card" id="incidents"><div class="feature-icon">⌕</div><h2>Incident investigation</h2><p>Build a time-aligned incident record from logs, traces, model activity, and deployment notes. Review findings against the source evidence.</p><ul class="check-list"><li>Chronological event context</li><li>Source-linked rule findings</li><li>Explicit insufficient-evidence state</li></ul></article>
+    <article class="feature-card" id="rag"><div class="feature-icon purple">◇</div><h2>RAG &amp; agent evidence</h2><p>Bring retrieval output, evaluation results, tool activity, and security signals into the same investigation for human review.</p><ul class="check-list"><li>Grounding and citation evidence</li><li>Prompt-injection indicators</li><li>Tool and policy review context</li></ul></article>
+    <article class="feature-card" id="infrastructure"><div class="feature-icon green">▦</div><h2>Infrastructure context</h2><p>Relate AI behavior to the environment where it ran, including GPU, Linux, Kubernetes, and service evidence.</p><ul class="check-list"><li>Development, staging, or production labels</li><li>GPU and cluster evidence files</li><li>Service and release context</li></ul></article>
+    <article class="feature-card" id="release"><div class="feature-icon">✓</div><h2>Review and verify</h2><p>Record a proposed action, require a human decision, and attach follow-up evidence to check whether the expected change occurred.</p><ul class="check-list"><li>Human-reviewed remediation drafts</li><li>Decision reason recorded</li><li>Follow-up evidence in the incident</li></ul></article>
+  </section>
+  <section class="workflow-band"><div class="eyebrow">A CONTROLLED WORKFLOW</div><h2>Investigate the cause. Verify the fix.</h2><p class="muted">The local pilot accepts uploaded evidence and runs deterministic rules. Live telemetry connectors, model-powered analysis, and automatic CI/CD gates are not included in this implementation.</p><div class="workflow-steps"><div><span>01</span><strong>Connect evidence</strong><small>Upload approved text evidence.</small></div><i>→</i><div><span>02</span><strong>Investigate</strong><small>Review time-ordered, cited findings.</small></div><i>→</i><div><span>03</span><strong>Approve</strong><small>Record a human decision.</small></div><i>→</i><div><span>04</span><strong>Verify</strong><small>Add evidence after the change.</small></div></div></section>
+  <div class="center cta-row"><a class="button primary" href="/demo">Explore the sample workspace →</a><a class="button secondary" href="/contact">Scope a pilot</a></div>
+</main>
+{% endblock %}
