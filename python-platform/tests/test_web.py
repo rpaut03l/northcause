@@ -2,7 +2,7 @@ def test_public_pages_render_with_site_navigation(client):
     for path in ("/", "/product", "/security", "/docs", "/pricing", "/contact", "/demo"):
         response = client.get(path)
         assert response.status_code == 200, path
-        assert "Northcause" in response.text
+        assert "NorthCause" in response.text
 
 
 def test_homepage_contains_product_preview_and_primary_navigation(client):
