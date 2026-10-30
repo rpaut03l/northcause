@@ -18,7 +18,7 @@ EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
 MAX_UPLOAD = 2 * 1024 * 1024
 ALLOWED = {".log", ".txt", ".json", ".ndjson", ".csv", ".yaml", ".yml"}
 SESSION_TTL = 8 * 3600
-app = FastAPI(title="Northcause", docs_url=None, redoc_url=None)
+app = FastAPI(title="NorthCause", docs_url=None, redoc_url=None)
 app.mount("/static", StaticFiles(directory=ROOT / "app" / "static"), name="static")
 templates = Jinja2Templates(directory=ROOT / "app" / "templates")
 templates.env.filters["from_json"] = json.loads
@@ -125,7 +125,7 @@ def demo(request: Request): return page(request,"demo.html",title="Sample worksp
 @app.get("/contact",response_class=HTMLResponse)
 def contact(request: Request, sent: int=0):
     token=secrets.token_urlsafe(24)
-    response=page(request,"contact.html",title="Contact",sent=bool(sent),success="Thanks. Your message was saved for the Northcause team." if sent else None,csrf_token=token)
+    response=page(request,"contact.html",title="Contact",sent=bool(sent),success="Thanks. Your message was saved for the NorthCause team." if sent else None,csrf_token=token)
     response.set_cookie("nc_contact_csrf",token,httponly=True,samesite="strict",secure=os.getenv("NORTHCAUSE_COOKIE_SECURE","0")=="1",max_age=3600,path="/")
     return response
 @app.post("/contact")
