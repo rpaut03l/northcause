@@ -1,4 +1,4 @@
-/* Northcause visual refinement: comfortable type, calmer hierarchy, consistent controls. */
+/* NorthCause visual refinement: comfortable type, calmer hierarchy, consistent controls. */
 :root {
   --ink: #0b1530;
   --muted: #52617b;
@@ -288,3 +288,8 @@ body {
   .product-assurance-grid .feature-card { padding: 20px; }
   .hero-product::before { inset: 0; }
 }
+
+/* NorthCause identity: standalone north-marker mark in the approved blue-violet palette. */
+img.brand-mark { display: block; flex: none; object-fit: contain; background: transparent; box-shadow: none; border-radius: 0; }
+img.brand-mark.mini { width: 34px; height: 34px; }
+img.mini-mark { display: block; flex: none; width: 22px; height: 22px; object-fit: contain; background: transparent; border-radius: 0; }
