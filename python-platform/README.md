@@ -1,6 +1,6 @@
-# Northcause Python parallel implementation
+# NorthCause Python parallel implementation
 
-A local-first Python/FastAPI implementation using the Northcause white, navy, and cobalt visual direction.
+A local-first Python/FastAPI implementation using the NorthCause white, navy, and cobalt visual direction.
 
 ## Local setup
 
