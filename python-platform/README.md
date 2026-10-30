@@ -23,7 +23,9 @@ The public `/demo` route is a read-only tour with fictional records; it needs no
 
 ## Included local workflows
 
-Public product/security/docs/pricing/contact pages, login/admin provisioning, incident create/list/detail, bounded UTF-8 text evidence uploads, simple secret redaction, rule-based investigation with exact evidence line references, human-reviewed remediation drafts, audit events, admin contact inbox/deletion.
+Public product/security/docs/pricing/contact pages, login/admin provisioning, incident create/list/detail, bounded UTF-8 text evidence uploads, simple secret redaction, rule-based investigation with exact evidence line references, human-reviewed remediation drafts, audit events, admin contact inbox/deletion, and paired exact-match replay checks attached to incidents.
+
+The Reliability Replay accepts UTF-8 JSONL with one object per line and non-empty string fields `expected`, `baseline`, and `candidate`. It compares exact-match rates, requires the candidate to meet the user-supplied threshold and not regress against baseline, and records only aggregate metrics plus the source file SHA-256. The input payload is evaluated in memory and is not stored. Start with [`examples/replay-example.jsonl`](examples/replay-example.jsonl). This is a narrow deterministic check, not a semantic quality or safety evaluator; use task-specific reviewed evaluators before making production release decisions. The feature has no live telemetry ingestion or model-provider integration.
 
 The analyser is deterministic rules, not an LLM. No external model call, GitHub integration, OpenTelemetry ingestion, automatic production changes, tenant provisioning UI, billing, or MFA/SSO is implemented in this parallel slice. Do not use customer data until security review and deployment-specific storage/auth controls are complete.
 
