@@ -1,0 +1,60 @@
+name: NorthCause Python pilot
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'python-platform/**'
+      - 'README.md'
+      - '.github/workflows/northcause-preview.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'python-platform/**'
+      - 'README.md'
+      - '.github/workflows/northcause-preview.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: python-platform/pyproject.toml
+      - name: Install pilot and test dependencies
+        working-directory: python-platform
+        run: python -m pip install -e '.[test]'
+      - name: Run Python tests
+        working-directory: python-platform
+        run: python -m pytest -q
+      - name: Build static Pages preview
+        working-directory: python-platform
+        run: python scripts/build_cloudflare_preview.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: northcause-pages-preview
+          path: python-platform/dist/
+          if-no-files-found: error
+          retention-days: 7
+
+  deploy-cloudflare-preview:
+    if: github.event_name == 'pull_request' && vars.CLOUDFLARE_PAGES_PREVIEW == 'true' && vars.CLOUDFLARE_PAGES_PROJECT != ''
+    needs: test-and-build-preview
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: northcause-pages-preview
+          path: dist
+      - name: Deploy branch preview to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT }} --branch=pr-${{ github.event.pull_request.number }}

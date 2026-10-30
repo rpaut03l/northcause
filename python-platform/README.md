@@ -27,6 +27,10 @@ Public product/security/docs/pricing/contact pages, login/admin provisioning, in
 
 The analyser is deterministic rules, not an LLM. No external model call, GitHub integration, OpenTelemetry ingestion, automatic production changes, tenant provisioning UI, billing, or MFA/SSO is implemented in this parallel slice. Do not use customer data until security review and deployment-specific storage/auth controls are complete.
 
-## Cloudflare direction
+## GitHub and Cloudflare preview
 
-Cloudflare now supports Python Workers and FastAPI via `workers` ASGI integration. Port SQLite/file persistence to D1/R2 bindings, replace local session/storage implementations with binding-backed services, add `python_workers` compatibility flag, and run via `uv run pywrangler dev`. Do not deploy this local SQLite configuration directly.
+GitHub Actions runs the Python test suite for pull requests and builds a static Cloudflare Pages preview of the public pages. The preview is for visual review only; sign-in, incident creation, evidence uploads, and account actions require the local FastAPI server.
+
+To enable preview deployments, create a Cloudflare Pages project and add repository secret `CLOUDFLARE_API_TOKEN`, secret `CLOUDFLARE_ACCOUNT_ID`, and repository variable `CLOUDFLARE_PAGES_PROJECT`. Set `CLOUDFLARE_PAGES_PREVIEW` to `true` to enable PR deployments. The workflow builds the preview with `python scripts/build_cloudflare_preview.py` and deploys it to a branch-specific Pages URL. The Cloudflare step is skipped until enabled.
+
+This keeps the local SQLite and file-based pilot out of Cloudflare. Do not treat the static preview as a hosted interactive service.

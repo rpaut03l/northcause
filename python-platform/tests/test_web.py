@@ -118,3 +118,13 @@ def test_security_headers_are_set(client):
     assert response.headers["x-content-type-options"] == "nosniff"
     assert response.headers["x-frame-options"] == "DENY"
     assert "frame-ancestors 'none'" in response.headers["content-security-policy"]
+
+
+def test_public_pages_show_parent_company_and_single_hyphen_copy(client):
+    for path in ("/", "/product", "/security", "/docs", "/pricing", "/contact", "/demo", "/login"):
+        response = client.get(path)
+        assert response.status_code == 200, path
+        assert "Narmadaya Innovations Pvt Ltd" in response.text, path
+        assert 'href="https://narmadaya.com/"' in response.text, path
+        assert "A Narmadaya Innovations Pvt Ltd company" not in response.text, path
+        assert "--" not in response.text, path
