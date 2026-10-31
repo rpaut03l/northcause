@@ -8,7 +8,7 @@ from fastapi import FastAPI, Request, Form, UploadFile, File, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from .replay import evaluate_jsonl, ReplayInputError
+from .replay import evaluate_jsonl, evaluate_candidates, dataset_version, ReplayInputError
 from .proofs import sign_record, verify_record, ensure_signing_key
 from .semantic import score_cases, SemanticJudgeError
 from .analysis import compute_regressions, build_timeline, rank_hypotheses, serialize_hypothesis
@@ -57,6 +57,8 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_otel_spans_trace ON otel_spans(trace_id);
         CREATE TABLE IF NOT EXISTS github_deliveries(delivery_id TEXT PRIMARY KEY,event TEXT NOT NULL,repository TEXT NOT NULL,ref TEXT,before_sha TEXT,after_sha TEXT,environment TEXT,status TEXT,created TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS semantic_runs(id TEXT PRIMARY KEY,user_id TEXT NOT NULL,summary TEXT NOT NULL,created TEXT NOT NULL,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE);
+        CREATE TABLE IF NOT EXISTS eval_cases(id TEXT PRIMARY KEY,incident_id TEXT NOT NULL,label TEXT NOT NULL,expected TEXT NOT NULL,baseline TEXT NOT NULL,source_evidence_id TEXT,source_line INTEGER,reviewer TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'active',created TEXT NOT NULL,FOREIGN KEY(incident_id) REFERENCES incidents(id) ON DELETE CASCADE);
+        CREATE INDEX IF NOT EXISTS idx_eval_cases_incident ON eval_cases(incident_id);
         CREATE TABLE IF NOT EXISTS hypotheses(id TEXT PRIMARY KEY,incident_id TEXT NOT NULL,statement TEXT NOT NULL,confidence REAL NOT NULL,evidence TEXT NOT NULL,counterevidence TEXT NOT NULL,status TEXT NOT NULL,generator TEXT NOT NULL,created TEXT NOT NULL,FOREIGN KEY(incident_id) REFERENCES incidents(id) ON DELETE CASCADE);
         CREATE INDEX IF NOT EXISTS idx_hypotheses_incident ON hypotheses(incident_id);
         CREATE TABLE IF NOT EXISTS proof_records(id TEXT PRIMARY KEY,replay_id TEXT NOT NULL UNIQUE,incident_id TEXT NOT NULL,user_id TEXT NOT NULL,payload TEXT NOT NULL,payload_sha256 TEXT NOT NULL,previous_hash TEXT NOT NULL,record_hash TEXT NOT NULL,signature TEXT NOT NULL,public_key TEXT NOT NULL,key_fingerprint TEXT NOT NULL,created TEXT NOT NULL,FOREIGN KEY(replay_id) REFERENCES replay_runs(id) ON DELETE CASCADE,FOREIGN KEY(incident_id) REFERENCES incidents(id) ON DELETE CASCADE,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE);
@@ -372,6 +374,53 @@ def hypotheses_generate(request: Request,incident_id: str,token:Annotated[str,Fo
     audit(u["id"],"incident.hypotheses",incident_id,{"count":len(ranked),"top_generator":ranked[0]["generator"]})
     return RedirectResponse(f"/app/incidents/{incident_id}#hypotheses",303)
 
+def _active_cases(incident_id: str) -> list[dict]:
+    with db() as c:
+        rows=c.execute("SELECT * FROM eval_cases WHERE incident_id=? AND status='active' ORDER BY created",(incident_id,)).fetchall()
+    return [dict(r) for r in rows]
+
+@app.post("/app/incidents/{incident_id}/eval-cases")
+def eval_case_create(request: Request,incident_id: str,label:Annotated[str,Form()],expected:Annotated[str,Form()],baseline:Annotated[str,Form()],source_evidence_id:Annotated[str,Form()]="",source_line:Annotated[str,Form()]="",token:Annotated[str,Form()]=""):
+    u=check_csrf(request,token);get_incident(incident_id,u)
+    label,expected,baseline=label.strip(),expected.strip(),baseline.strip()
+    if not label or not expected or not baseline or len(label)>120 or len(expected)>8000 or len(baseline)>8000:
+        raise HTTPException(400,"Eval case needs a label and non-empty expected/baseline up to 8,000 characters")
+    evidence_ref=None
+    if source_evidence_id.strip():
+        with db() as c: row=c.execute("SELECT id FROM evidence WHERE id=? AND incident_id=?",(source_evidence_id.strip(),incident_id)).fetchone()
+        if not row: raise HTTPException(400,"source_evidence_id does not belong to this incident")
+        evidence_ref=row["id"]
+    line=None
+    if source_line.strip():
+        try: line=max(1,int(source_line))
+        except ValueError: raise HTTPException(400,"source_line must be an integer")
+    case_id=uid("case")
+    with db() as c:
+        if c.execute("SELECT COUNT(*) n FROM eval_cases WHERE incident_id=? AND status='active'",(incident_id,)).fetchone()["n"]>=500:
+            raise HTTPException(413,"An incident dataset is limited to 500 active cases")
+        c.execute("INSERT INTO eval_cases VALUES(?,?,?,?,?,?,?,?,?,?)",(case_id,incident_id,label,expected,baseline,evidence_ref,line,u["id"],"active",now()))
+    audit(u["id"],"eval_case.create",case_id,{"incident_id":incident_id,"evidence_ref":evidence_ref})
+    return RedirectResponse(f"/app/incidents/{incident_id}#evalcases",303)
+
+@app.post("/app/eval-cases/{case_id}/retire")
+def eval_case_retire(request: Request,case_id: str,token:Annotated[str,Form()]=""):
+    u=check_csrf(request,token)
+    with db() as c:
+        row=c.execute("SELECT e.id,e.incident_id FROM eval_cases e JOIN incidents i ON i.id=e.incident_id WHERE e.id=? AND i.user_id=?",(case_id,u["id"])).fetchone()
+        if not row: raise HTTPException(404,"Eval case not found")
+        c.execute("UPDATE eval_cases SET status='retired' WHERE id=?",(case_id,))
+    audit(u["id"],"eval_case.retire",case_id)
+    return RedirectResponse(f"/app/incidents/{row['incident_id']}#evalcases",303)
+
+@app.get("/api/incidents/{incident_id}/eval-cases")
+def eval_cases_api(request: Request,incident_id: str):
+    user=require_user(request);get_incident(incident_id,user)
+    cases=_active_cases(incident_id)
+    return {"incident_id":incident_id,"dataset_version":dataset_version(cases) if cases else None,
+            "cases":[{k:case[k] for k in ("id","label","expected","baseline","source_evidence_id","source_line","created")} for case in cases],
+            "candidate_template":[{"case_id":case["id"],"candidate":""} for case in cases],
+            "note":"Reviewed cases define the dataset. Any change to the active set changes dataset_version."}
+
 @app.get("/api/incidents/{incident_id}/hypotheses")
 def hypotheses_api(request: Request,incident_id: str):
     user=require_user(request);get_incident(incident_id,user)
@@ -460,7 +509,8 @@ def incident_detail(request: Request,incident_id: str):
     timeline=build_timeline(incident,evidence,signals["git_events"],regressions)
     with db() as c:
         hypotheses=[{**dict(r),"evidence":json.loads(r["evidence"]),"counterevidence":json.loads(r["counterevidence"])} for r in c.execute("SELECT * FROM hypotheses WHERE incident_id=? ORDER BY confidence DESC,created DESC",(incident_id,)).fetchall()]
-    return page(request,"incident.html",title=incident["title"],incident=incident,evidence=evidence,investigations=investigations,drafts=drafts,replay_runs=replay_runs,signals=signals,regressions=regressions,timeline=timeline,hypotheses=hypotheses)
+    eval_cases=_active_cases(incident_id)
+    return page(request,"incident.html",title=incident["title"],incident=incident,evidence=evidence,investigations=investigations,drafts=drafts,replay_runs=replay_runs,signals=signals,regressions=regressions,timeline=timeline,hypotheses=hypotheses,eval_cases=eval_cases,dataset_version=dataset_version(eval_cases) if eval_cases else None)
 
 @app.get("/app/incidents/{incident_id}/replay",response_class=HTMLResponse)
 def replay_page(request: Request,incident_id: str):
@@ -469,10 +519,11 @@ def replay_page(request: Request,incident_id: str):
         rows=c.execute("SELECT summary,created FROM replay_runs WHERE incident_id=? AND user_id=? ORDER BY created DESC LIMIT 10",(incident_id,u["id"])).fetchall()
     runs=[{"summary":json.loads(row["summary"]),"created":row["created"]} for row in rows]
     with db() as c: proof=c.execute("SELECT id FROM proof_records WHERE incident_id=? AND user_id=? ORDER BY created DESC LIMIT 1",(incident_id,u["id"])).fetchone()
-    return page(request,"replay.html",title="Reliability Replay",incident=incident,runs=runs,error=None,result=runs[0]["summary"] if runs else None,proof=proof)
+    cases=_active_cases(incident_id)
+    return page(request,"replay.html",title="Reliability Replay",incident=incident,runs=runs,error=None,result=runs[0]["summary"] if runs else None,proof=proof,eval_cases=cases,dataset_version=dataset_version(cases) if cases else None)
 
 @app.post("/app/incidents/{incident_id}/replay",response_class=HTMLResponse)
-async def replay_run(request: Request,incident_id: str,file: UploadFile=File(...),threshold: Annotated[float,Form()]=80,token:Annotated[str,Form()]=""):
+async def replay_run(request: Request,incident_id: str,file: UploadFile=File(...),threshold: Annotated[float,Form()]=80,mode: Annotated[str,Form()]="paired",token:Annotated[str,Form()]=""):
     u=check_csrf(request,token); incident=get_incident(incident_id,u)
     if Path(file.filename or "").suffix.lower() not in {".jsonl", ".ndjson"}:
         raise HTTPException(415,"Upload a JSONL or NDJSON replay set")
@@ -482,14 +533,17 @@ async def replay_run(request: Request,incident_id: str,file: UploadFile=File(...
     if len(raw)>MAX_UPLOAD:
         raise HTTPException(413,"Replay file exceeds 2 MiB")
     digest=hashlib.sha256(raw).hexdigest()
+    cases=_active_cases(incident_id) if mode=="stored" else []
     try:
-        evaluated=evaluate_jsonl(raw,threshold,digest)
+        if mode=="stored": evaluated=evaluate_candidates(raw,cases,threshold,digest)
+        elif mode=="paired": evaluated=evaluate_jsonl(raw,threshold,digest)
+        else: raise ReplayInputError("Unknown replay mode")
     except ReplayInputError as exc:
         with db() as c:
             rows=c.execute("SELECT summary,created FROM replay_runs WHERE incident_id=? AND user_id=? ORDER BY created DESC LIMIT 10",(incident_id,u["id"])).fetchall()
         runs=[{"summary":json.loads(row["summary"]),"created":row["created"]} for row in rows]
-        return page(request,"replay.html",title="Reliability Replay",incident=incident,runs=runs,error=str(exc),result=runs[0]["summary"] if runs else None)
-    summary={"cases":evaluated.cases,"baseline_passes":evaluated.baseline_passes,"candidate_passes":evaluated.candidate_passes,"baseline_rate":evaluated.baseline_rate,"candidate_rate":evaluated.candidate_rate,"threshold":evaluated.threshold,"gate":evaluated.gate,"source_sha256":evaluated.source_sha256}
+        return page(request,"replay.html",title="Reliability Replay",incident=incident,runs=runs,error=str(exc),result=runs[0]["summary"] if runs else None,eval_cases=_active_cases(incident_id),dataset_version=None)
+    summary={"cases":evaluated.cases,"baseline_passes":evaluated.baseline_passes,"candidate_passes":evaluated.candidate_passes,"baseline_rate":evaluated.baseline_rate,"candidate_rate":evaluated.candidate_rate,"threshold":evaluated.threshold,"gate":evaluated.gate,"source_sha256":evaluated.source_sha256,"mode":mode,"dataset_version":dataset_version(cases) if mode=="stored" else None}
     try: ensure_signing_key(DATA)
     except (RuntimeError,ValueError) as exc: raise HTTPException(503, str(exc))
     replay_id=uid("replay")
