@@ -373,8 +373,17 @@ def logout(request: Request,token:Annotated[str,Form()]=""):
 @app.get("/app",response_class=HTMLResponse)
 def dashboard(request: Request):
     u=require_user(request)
-    with db() as c: incidents=c.execute("SELECT i.*,COUNT(e.id) evidence_count FROM incidents i LEFT JOIN evidence e ON e.incident_id=i.id WHERE i.user_id=? GROUP BY i.id ORDER BY i.created DESC",(u["id"],)).fetchall()
-    return page(request,"dashboard.html",title="Workspace",incidents=incidents)
+    with db() as c:
+        incidents=c.execute("SELECT i.*,COUNT(e.id) evidence_count FROM incidents i LEFT JOIN evidence e ON e.incident_id=i.id WHERE i.user_id=? GROUP BY i.id ORDER BY i.created DESC",(u["id"],)).fetchall()
+        totals=c.execute("""
+            SELECT
+              (SELECT COUNT(*) FROM incidents WHERE user_id=? AND status NOT IN ('resolved','closed')) AS active_incidents,
+              (SELECT COUNT(*) FROM evidence e JOIN incidents i ON i.id=e.incident_id WHERE i.user_id=?) AS evidence_items,
+              (SELECT COUNT(*) FROM replay_runs WHERE user_id=?) AS replay_runs,
+              (SELECT COUNT(*) FROM proof_records WHERE user_id=?) AS proof_records
+        """,(u["id"],u["id"],u["id"],u["id"])).fetchone()
+        recent_evidence=c.execute("SELECT e.id,e.label,e.sha256,e.created,i.title AS incident_title FROM evidence e JOIN incidents i ON i.id=e.incident_id WHERE i.user_id=? ORDER BY e.created DESC LIMIT 4",(u["id"],)).fetchall()
+    return page(request,"dashboard.html",title="Workspace",incidents=incidents,totals=totals,recent_evidence=recent_evidence)
 @app.get("/app/incidents/new",response_class=HTMLResponse)
 def incident_new(request: Request): require_user(request);return page(request,"incident_new.html",title="New incident")
 @app.post("/app/incidents")
