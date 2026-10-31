@@ -184,6 +184,8 @@ def evidence_loop(request: Request): return page(request,"evidence_loop.html",ti
 def security_page(request: Request): return page(request,"security.html",title="Security")
 @app.get("/docs",response_class=HTMLResponse)
 def docs(request: Request): return page(request,"docs.html",title="Docs")
+@app.get("/cli",response_class=HTMLResponse)
+def cli_page(request: Request): return page(request,"cli.html",title="CLI tools",active="cli")
 @app.get("/pricing",response_class=HTMLResponse)
 def pricing(request: Request): return page(request,"pricing.html",title="Pricing")
 @app.get("/demo",response_class=HTMLResponse)

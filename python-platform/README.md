@@ -29,6 +29,10 @@ The Reliability Replay accepts UTF-8 JSONL with one object per line and non-empt
 
 See [`../docs/northcause-product-blueprint.md`](../docs/northcause-product-blueprint.md) for the proposed product scope, integration sequence, data model, deployment direction, pricing hypotheses, and roadmap. Proposal items are marked separately from current pilot capabilities.
 
+## CausePath and CausePilot CLI tools
+
+The package exposes `causepath` for deterministic local workflows and `causepilot` for explicitly enabled, BYO-model drafts. From this directory run `python -m pip install -e .`, then use `causepath --help` and `causepilot --help`. Full setup, examples, data handling, limitations, and the customer portal/Cloudflare boundary are in [`../docs/cli-and-portal.md`](../docs/cli-and-portal.md).
+
 The deterministic analyzer remains rule-based. This branch adds opt-in OTLP/HTTP JSON intake, signed GitHub push/deployment webhooks, optional customer-configured semantic judging, Ed25519 replay proof records, and an authenticated SOS intake. GitHub integration is read-only, semantic evaluation is disabled until explicitly configured, and remediation remains human-approved draft guidance. The SOS intake is not staffed and does not provide a response SLA or automatic containment. Tenant provisioning, billing, MFA/SSO, automatic customer-system changes, and managed production operations are not implemented. Do not use customer data until security review and deployment-specific storage/auth controls are complete.
 
 ## GitHub and Cloudflare preview

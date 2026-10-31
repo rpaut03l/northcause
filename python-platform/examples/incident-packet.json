@@ -1,0 +1,7 @@
+{
+  "schema_version": "northcause.incident.v1",
+  "title": "Synthetic retrieval regression after index update",
+  "service": "sample-answer-api",
+  "environment": "staging",
+  "evidence": []
+}

@@ -1,1 +1,14 @@
-{% extends 'base.html' %}{% block title %}Sign in · NorthCause{% endblock %}{% block content %}<section class="auth-section"><div class="auth-card"><a class="brand" href="/"><img class="brand-mark" src="/static/northcause-mark.svg" alt="">NorthCause</a><span class="eyebrow">PILOT WORKSPACE</span><h1>Welcome back</h1><p class="muted">Sign in to review incidents and evidence.</p>{% if request.query_params.get('error') %}<div class="alert error" role="alert">Email or password was not recognized. Try again.</div>{% endif %}<form method="post" action="/login" class="stack-form"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><label>Email address<input type="email" name="email" autocomplete="username" required></label><label>Password<input type="password" name="password" autocomplete="current-password" required></label><button class="button full" type="submit">Sign in <span>→</span></button></form><div class="auth-foot">Pilot accounts are provisioned by a workspace administrator.</div><a class="text-link" href="/">← Back to NorthCause</a></div></section>{% endblock %}
+{% extends 'base.html' %}{% block title %}Customer sign in · NorthCause{% endblock %}{% block content %}
+<section class="portal-login wrap">
+  <div class="portal-login-aside">
+    <a class="brand" href="/"><img class="brand-mark" src="/static/northcause-mark.svg" alt=""><span>NorthCause</span></a>
+    <div class="portal-login-copy"><span class="eyebrow">CUSTOMER WORKSPACE</span><h1>Evidence your team can follow.</h1><p>Review incident timelines, source evidence, replay outcomes, and signed proof records in one controlled workspace.</p>
+      <div class="portal-assurance"><span aria-hidden="true">✓</span><div><strong>Your evidence. Your control.</strong><small>Workspace access is limited to provisioned accounts. Evidence handling and retention follow your deployment configuration.</small></div></div>
+    </div><div class="portal-login-bottom">Find it. Fix it. Prove it.</div>
+  </div>
+  <div class="portal-login-main"><div class="portal-login-card"><span class="eyebrow">NORTHCAUSE PORTAL</span><h2>Sign in to your workspace</h2><p class="muted">Use the account provisioned by your workspace administrator.</p>
+    {% if request.query_params.get('error') %}<div class="alert error" role="alert">Email or password was not recognized. Try again.</div>{% endif %}
+    <form method="post" action="/login" class="stack-form"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><label>Email address<input type="email" name="email" autocomplete="username" placeholder="you@company.com" required></label><label>Password<input type="password" name="password" autocomplete="current-password" required></label><button class="button full" type="submit">Continue to workspace <span aria-hidden="true">→</span></button></form>
+    <div class="portal-login-meta"><span>Protected sign-in</span><span>Need access? <a href="/contact">Contact NorthCause</a></span></div><a class="text-link portal-back" href="/">← Back to NorthCause</a>
+  </div></div>
+</section>{% endblock %}

@@ -1,0 +1,7 @@
+{
+  "source": "synthetic-demo",
+  "trace_id": "0123456789abcdef0123456789abcdef",
+  "deployment": "sample-2026-10-31",
+  "signal": "retrieval returned no approved documents",
+  "note": "Fictional example. Contains no customer data."
+}
