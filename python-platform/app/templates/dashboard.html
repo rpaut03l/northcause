@@ -1,1 +1,35 @@
-{% extends 'base.html' %}{% block title %}Workspace · NorthCause{% endblock %}{% block content %}<section class="workspace wrap"><div class="workspace-head"><div><span class="eyebrow">WORKSPACE OVERVIEW</span><h1>Your incidents</h1><p class="muted">Triage issues with source evidence and recorded investigation notes.</p></div><a class="button" href="/app/incidents/new">＋ New incident</a></div><section class="surface"><div class="surface-heading"><div><h2>Recent incidents</h2><p>Private to this pilot account</p></div><a class="text-link" href="/app/audit">Audit trail →</a></div>{% if incidents %}<div class="table-wrap"><table><thead><tr><th>Incident</th><th>Service</th><th>Environment</th><th>Severity</th><th>Status</th><th>Evidence</th><th>Created</th></tr></thead><tbody>{% for incident in incidents %}<tr><td><a class="table-link" href="/app/incidents/{{ incident.id }}">{{ incident.title }}</a><small>{{ incident.id }}</small></td><td>{{ incident.service }}</td><td><span class="environment-pill {{ incident.environment|lower }}">{{ incident.environment }}</span></td><td><span class="badge {{ incident.severity|lower }}">{{ incident.severity }}</span></td><td>{{ incident.status }}</td><td>{{ incident.evidence_count }}</td><td>{{ incident.created }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty-state"><span class="empty-icon">⌕</span><h3>No incidents yet</h3><p>Create an incident and attach a small, redacted text sample.</p><a class="button button-secondary" href="/app/incidents/new">Create first incident</a></div>{% endif %}</section><div class="notice"><strong>Local pilot workspace</strong><p>Investigation uses deterministic local rules. No AI provider is called and no system changes are executed.</p></div></section>{% endblock %}
+{% extends 'base.html' %}
+{% block title %}Workspace · NorthCause{% endblock %}
+{% block content %}
+<section class="workspace wrap">
+  <div class="workspace-head">
+    <div><span class="eyebrow">WORKSPACE OVERVIEW</span><h1>Reliability overview</h1><p class="muted">Review incidents, evidence, replay checks, and proof records for your workspace.</p></div>
+    <a class="button" href="/app/incidents/new">＋ New incident</a>
+  </div>
+
+  <section class="portal-kpis" aria-label="Workspace counts">
+    <article><span>Open incidents</span><strong>{{ totals.active_incidents }}</strong><small>Awaiting investigation or review</small></article>
+    <article><span>Evidence items</span><strong>{{ totals.evidence_items }}</strong><small>Attached to your incidents</small></article>
+    <article><span>Replay runs</span><strong>{{ totals.replay_runs }}</strong><small>Deterministic paired checks</small></article>
+    <article><span>Proof records</span><strong>{{ totals.proof_records }}</strong><small>Signed replay records</small></article>
+  </section>
+
+  <div class="portal-dashboard-grid">
+    <section class="surface">
+      <div class="surface-heading"><div><h2>Recent incidents</h2><p>Visible only to your signed-in account.</p></div><a class="text-link" href="/app/audit">Audit trail →</a></div>
+      {% if incidents %}
+      <div class="table-wrap"><table><thead><tr><th>Incident</th><th>Service</th><th>Environment</th><th>Severity</th><th>Status</th><th>Evidence</th><th>Created</th></tr></thead><tbody>
+      {% for incident in incidents %}<tr><td><a class="table-link" href="/app/incidents/{{ incident.id }}">{{ incident.title }}</a><small>{{ incident.id }}</small></td><td>{{ incident.service }}</td><td><span class="environment-pill {{ incident.environment|lower }}">{{ incident.environment }}</span></td><td><span class="badge {{ incident.severity|lower }}">{{ incident.severity }}</span></td><td>{{ incident.status }}</td><td>{{ incident.evidence_count }}</td><td>{{ incident.created }}</td></tr>{% endfor %}
+      </tbody></table></div>
+      {% else %}<div class="empty-state"><span class="empty-icon">⌕</span><h3>No incidents yet</h3><p>Create an incident and attach a small, redacted text sample.</p><a class="button button-secondary" href="/app/incidents/new">Create first incident</a></div>{% endif %}
+    </section>
+
+    <aside class="surface portal-evidence-panel"><div class="surface-heading"><div><h2>Recent evidence</h2><p>Latest uploads linked to incidents.</p></div></div>
+      {% if recent_evidence %}<div class="portal-evidence-list">{% for item in recent_evidence %}<a class="portal-evidence-item" href="/app/evidence/{{ item.id }}"><span class="portal-evidence-mark" aria-hidden="true">↗</span><span><strong>{{ item.label }}</strong><small>{{ item.incident_title }}</small><small>SHA-256 · {{ item.sha256[:12] }}…</small></span></a>{% endfor %}</div>
+      {% else %}<div class="portal-evidence-empty"><strong>No evidence uploaded</strong><p>Attach a small, redacted text file to an incident to start an evidence trail.</p></div>{% endif %}
+    </aside>
+  </div>
+
+  <div class="notice portal-boundary-note"><strong>Local pilot workspace</strong><p>Findings use deterministic rules. No external AI provider is called and no production change is executed.</p></div>
+</section>
+{% endblock %}

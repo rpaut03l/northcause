@@ -29,11 +29,15 @@ The Reliability Replay accepts UTF-8 JSONL with one object per line and non-empt
 
 See [`../docs/northcause-product-blueprint.md`](../docs/northcause-product-blueprint.md) for the proposed product scope, integration sequence, data model, deployment direction, pricing hypotheses, and roadmap. Proposal items are marked separately from current pilot capabilities.
 
+## NorthCause CLI and NorthCause AI CLI CLI tools
+
+The package exposes `northcause` for deterministic local workflows and `northcause-ai` for explicitly enabled, BYO-model drafts. From this directory run `python -m pip install -e .`, then use `northcause --help` and `northcause-ai --help`. Full setup, examples, data handling, limitations, customer access flow, and the Cloud Shell hosting boundary are in [`../docs/cli-and-portal.md`](../docs/cli-and-portal.md).
+
 The deterministic analyzer remains rule-based. This branch adds opt-in OTLP/HTTP JSON intake, signed GitHub push/deployment webhooks, optional customer-configured semantic judging, Ed25519 replay proof records, and an authenticated SOS intake. GitHub integration is read-only, semantic evaluation is disabled until explicitly configured, and remediation remains human-approved draft guidance. The SOS intake is not staffed and does not provide a response SLA or automatic containment. Tenant provisioning, billing, MFA/SSO, automatic customer-system changes, and managed production operations are not implemented. Do not use customer data until security review and deployment-specific storage/auth controls are complete.
 
 ## GitHub and Cloudflare preview
 
-GitHub Actions runs the Python test suite for pull requests and builds a static Cloudflare Pages preview of the public pages. The preview is for visual review only; sign-in, incident creation, evidence uploads, and account actions require the local FastAPI server.
+GitHub Actions runs the Python test suite for pull requests and builds a static Cloudflare Pages preview of the public pages, including the signup-request and Cloud Shell product pages. The preview is for visual review only; sign-in, access-request submission, incident creation, evidence uploads, and account actions require the local FastAPI server. The Cloud Shell page is a roadmap overview, not a hosted terminal.
 
 To enable preview deployments, create a Cloudflare Pages project and add repository secret `CLOUDFLARE_API_TOKEN`, secret `CLOUDFLARE_ACCOUNT_ID`, and repository variable `CLOUDFLARE_PAGES_PROJECT`. Set `CLOUDFLARE_PAGES_PREVIEW` to `true` to enable PR deployments. The workflow builds the preview with `python scripts/build_cloudflare_preview.py` and deploys it to a branch-specific Pages URL. The Cloudflare step is skipped until enabled. Only public routes are deployed; the FastAPI integration API is not hosted by the static Pages artifact.
 
