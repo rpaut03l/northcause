@@ -125,11 +125,21 @@ The prompt treats evidence as untrusted data and asks for source references, cou
 
 Environment variables are inherited by child processes. Use your organization's approved secret manager or shell mechanism and avoid shell history when setting credentials.
 
-## Customer portal and hosting boundary
+## Customer access and portal boundary
 
-The portal sign-in is `/login`; the authenticated workspace starts at `/app`. Pilot accounts are provisioned by an administrator. Self-service signup, password reset, SSO/MFA, tenant administration, billing, and user-managed API keys are not in this release. The current application uses the Python FastAPI service and SQLite/file-backed pilot storage.
+The customer sign-in is `/login`; the authenticated workspace starts at `/app`. Pilot accounts remain provisioned by an administrator. `/signup` is a **workspace-access request**, not password-based self-registration: it collects a name, work email, organization, and optional short message, then stores the request in the existing administrator contact inbox. It does not collect passwords, send verification email, create a user, or grant access. Repeated requests from the same email are suppressed for 15 minutes. The page links back to `/login` and lists `hello@narmadya.com` as the NorthCause contact and headquarters as Jabalpur, Madhya Pradesh, India.
 
-Cloudflare Pages can serve the public site, documentation, CLI product page, and a clearly labeled static visual preview of sign-in. Static Pages does not run the current FastAPI auth, SQLite, evidence upload, replay, or authenticated workspace flows. The preview intercepts forms and performs no authentication or data submission. Do not put passwords, tokens, customer data, or real workspace activity into a static preview.
+The FastAPI app uses its existing SQLite pilot store for these requests. The public Cloudflare Pages artifact renders `/signup` as a visual preview and intercepts the form; it does **not** submit or persist the request. Do not enter real contact data in the static preview. The current implementation still does not provide self-service credentials, email verification, password reset, SSO/MFA, organization membership, billing, or user-managed API keys.
+
+## Browser shell and paid-feature direction
+
+`/cloud-shell` describes the planned browser workflow for `northcause` and `northcause-ai`, proposed Developer/Pro/Enterprise packaging, session profiles, usage estimates, and spend controls. The page is a product overview only: no web terminal, remote command execution, persistent shell volume, subscription, metering, or payment flow is deployed by this PR. Cloud Shell prices, entitlements, included usage, retention and idle limits remain unannounced and must be set after compute and support costs are validated.
+
+The proposed first hosting shape is Cloudflare Workers as an authenticated session broker with Cloudflare Containers running a prebuilt Linux CLI image. Keep the container image portable and isolate it from the identity, billing, and evidence APIs so NorthCause can move the runtime to another provider later. This is an architecture direction, not a deployment. Before customer command execution, build and review per-user/container isolation, short-lived scoped credentials, network-egress policy, websocket authorization, resource quotas, idle shutdown, log redaction, persistence/deletion behavior, abuse controls, billing estimates/caps, and incident response. The `northcause-ai` command must retain its per-command `--allow-evidence-egress` guard even inside a hosted terminal.
+
+## Cloudflare preview and deployment boundary
+
+Cloudflare Pages serves the public site, product documentation, CLI product page, and clearly labeled visual previews of `/login`, `/signup`, and `/cloud-shell`. Static Pages does not run the Python FastAPI application, SQLite, evidence uploads, replay, authentication, signup requests, or a remote terminal. Its preview script intercepts every form and performs no authentication or data submission. Do not put passwords, tokens, customer data, or real workspace activity into the static preview.
 
 When usage justifies moving the API, deploy the Python application on an HTTPS-capable host or container platform with durable database/object storage, managed secrets, backups, retention/deletion controls, tenant-scoped auth, rate limits, monitoring, and a reviewed data-residency design. Keep Cloudflare in front as the public edge if useful. Moving hosts will require migration and security work; it is not automatic just because the marketing site uses Cloudflare.
 
@@ -141,7 +151,9 @@ When usage justifies moving the API, deploy the Python application on an HTTPS-c
 | Exact-match paired replay and local proof verification | Semantic guarantees or universal RCA |
 | Health check and bounded OTLP push to existing pilot endpoint | General Git provider CLI, CI checks, or production change application |
 | Optional BYO OpenAI-compatible NorthCause AI CLI drafts | NorthCause-hosted model, training on customer data, or staffed AI SOS |
-| Branded sign-in page and static Cloudflare visual page | Production Cloudflare authentication/API hosting, SSO, MFA, self-service signup |
+| Sign-in and workspace-access request page with admin review | Self-service account/password creation, verification email, SSO/MFA |
+| Cloud Shell product overview and commercial-plan concepts | Hosted shell runtime, subscription billing, metering, or spend enforcement |
+| Static Cloudflare pages for the public overview and previews | Production Cloudflare authentication/API hosting or customer compute |
 
 ## Support and reporting
 

@@ -16,10 +16,10 @@ sys.path.insert(0, str(ROOT))
 from fastapi.testclient import TestClient  # noqa: E402
 from app.main import app  # noqa: E402
 
-ROUTES = ("/", "/product", "/evidence-loop", "/cli", "/security", "/docs", "/pricing", "/demo", "/contact", "/login")
+ROUTES = ("/", "/product", "/evidence-loop", "/cli", "/cloud-shell", "/security", "/docs", "/pricing", "/demo", "/contact", "/login", "/signup")
 NOTICE = (
     '<aside class="static-preview-notice" role="status" tabindex="0">'
-    'Cloudflare visual preview - interactive workflows run locally on port 8888.'
+    'Cloudflare visual preview - shell execution and billing are not enabled; run the FastAPI app locally for the workspace access-request form.'
     '</aside>'
 )
 SCRIPT = '<script defer src="/static/preview.js"></script>'
@@ -49,7 +49,7 @@ def main() -> None:
         encoding="utf-8",
     )
     (output / "static" / "preview.js").write_text(
-        "document.addEventListener('submit',function(event){event.preventDefault();var note=document.querySelector('.static-preview-notice');if(note){note.textContent='This is a visual preview. Run the local FastAPI app on port 8888 to use forms and workspace actions.';note.focus();}});\n",
+        "document.addEventListener('submit',function(event){event.preventDefault();var note=document.querySelector('.static-preview-notice');if(note){note.textContent='Static preview only: no request was sent. Run the FastAPI app locally to submit a workspace access request.';note.focus();}});\n",
         encoding="utf-8",
     )
     print(f"Built {len(ROUTES)} static preview pages in {output}")

@@ -4,11 +4,11 @@
     <a class="brand" href="/"><img class="brand-mark" src="/static/northcause-mark.svg" alt=""><span>NorthCause</span></a>
     <div class="portal-login-copy"><span class="eyebrow">CUSTOMER WORKSPACE</span><h1>Evidence your team can follow.</h1><p>Review incident timelines, source evidence, replay outcomes, and signed proof records in one controlled workspace.</p>
       <div class="portal-assurance"><span aria-hidden="true">✓</span><div><strong>Your evidence. Your control.</strong><small>Workspace access is limited to provisioned accounts. Evidence handling and retention follow your deployment configuration.</small></div></div>
-    </div><div class="portal-login-bottom">Find it. Fix it. Prove it.</div>
+    </div><div class="portal-login-bottom">Find it. Fix it. Prove it.<small>Support: <a href="mailto:hello@narmadya.com">hello@narmadya.com</a><br>Headquarters: Jabalpur, Madhya Pradesh, India</small></div>
   </div>
   <div class="portal-login-main"><div class="portal-login-card"><span class="eyebrow">NORTHCAUSE PORTAL</span><h2>Sign in to your workspace</h2><p class="muted">Use the account provisioned by your workspace administrator.</p>
     {% if request.query_params.get('error') %}<div class="alert error" role="alert">Email or password was not recognized. Try again.</div>{% endif %}
     <form method="post" action="/login" class="stack-form"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><label>Email address<input type="email" name="email" autocomplete="username" placeholder="you@company.com" required></label><label>Password<input type="password" name="password" autocomplete="current-password" required></label><button class="button full" type="submit">Continue to workspace <span aria-hidden="true">→</span></button></form>
-    <div class="portal-login-meta"><span>Protected sign-in</span><span>Need access? <a href="/contact">Contact NorthCause</a></span></div><a class="text-link portal-back" href="/">← Back to NorthCause</a>
+    <div class="portal-login-meta"><span>Protected sign-in</span><span>New here? <a href="/signup">Request workspace access</a></span></div><a class="text-link portal-back" href="/">← Back to NorthCause</a>
   </div></div>
 </section>{% endblock %}

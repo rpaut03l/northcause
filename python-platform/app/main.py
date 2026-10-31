@@ -103,7 +103,7 @@ async def security(request: Request, call_next):
 
 def page(request: Request, name: str, **ctx):
     token = csrf(request)
-    active = {"/product": "product", "/evidence-loop": "evidence_loop", "/security": "security", "/docs": "docs", "/pricing": "pricing"}.get(request.url.path, "")
+    active = {"/product": "product", "/evidence-loop": "evidence_loop", "/security": "security", "/docs": "docs", "/pricing": "pricing", "/cloud-shell": "cloud_shell"}.get(request.url.path, "")
     return templates.TemplateResponse(request=request,name=name,context={"user":request.state.user,"csrf":token,"csrf_token":token,"active":active,**ctx})
 def require_user(request: Request):
     user=request.state.user
@@ -186,6 +186,8 @@ def security_page(request: Request): return page(request,"security.html",title="
 def docs(request: Request): return page(request,"docs.html",title="Docs")
 @app.get("/cli",response_class=HTMLResponse)
 def cli_page(request: Request): return page(request,"cli.html",title="CLI tools",active="cli")
+@app.get("/cloud-shell",response_class=HTMLResponse)
+def cloud_shell_page(request: Request): return page(request,"cloud_shell.html",title="NorthCause Cloud Shell",active="cloud_shell")
 @app.get("/pricing",response_class=HTMLResponse)
 def pricing(request: Request): return page(request,"pricing.html",title="Pricing")
 @app.get("/demo",response_class=HTMLResponse)
@@ -350,6 +352,27 @@ def login(request: Request):
     response=page(request,"login.html",title="Sign in",error="Sign-in failed" if request.query_params.get("error") else None,csrf_token=token)
     response.set_cookie("nc_login_csrf",token,httponly=True,samesite="strict",secure=os.getenv("NORTHCAUSE_COOKIE_SECURE","0")=="1",max_age=3600,path="/")
     return response
+@app.get("/signup",response_class=HTMLResponse)
+def signup(request: Request):
+    token=secrets.token_urlsafe(24)
+    response=page(request,"signup.html",title="Request workspace access",csrf_token=token,sent=request.query_params.get("sent")=="1")
+    response.set_cookie("nc_signup_csrf",token,httponly=True,samesite="strict",secure=os.getenv("NORTHCAUSE_COOKIE_SECURE","0")=="1",max_age=3600,path="/")
+    return response
+@app.post("/signup")
+def signup_post(request: Request,name:Annotated[str,Form()],email:Annotated[str,Form()],company:Annotated[str,Form()]= "",message:Annotated[str,Form()]= "",website:Annotated[str,Form()]= "",csrf_token:Annotated[str,Form()]= ""):
+    cookie=request.cookies.get("nc_signup_csrf","")
+    if not cookie or not csrf_token or not hmac.compare_digest(cookie,csrf_token): raise HTTPException(403,"Invalid CSRF token")
+    if website.strip(): return RedirectResponse("/signup?sent=1",303)
+    name=name.strip(); email=email.strip().lower(); company=company.strip(); message=message.strip()
+    if not name or len(name)>100 or len(email)>254 or not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+",email) or len(company)>120 or len(message)>1200:
+        raise HTTPException(400,"Please check the form fields and try again")
+    request_message="Workspace access request. "+(message if message else "Please contact me about NorthCause workspace access.")
+    cutoff=datetime.fromtimestamp(time.time()-900,timezone.utc).isoformat()
+    with db() as c:
+        recent=c.execute("SELECT 1 FROM contacts WHERE lower(email)=? AND message LIKE 'Workspace access request.%' AND created>=? LIMIT 1",(email,cutoff)).fetchone()
+        if not recent:
+            c.execute("INSERT INTO contacts VALUES(?,?,?,?,?,?)",(uid("msg"),name,email,company,request_message,now()))
+    return RedirectResponse("/signup?sent=1",303)
 @app.post("/login")
 def login_post(request: Request,email:Annotated[str,Form()],password:Annotated[str,Form()],csrf_token:Annotated[str,Form()]=""):
     cookie=request.cookies.get("nc_login_csrf","")
