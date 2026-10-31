@@ -13,8 +13,8 @@ from .common import default_api_url, read_bounded, request_json
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="causepath", description="Local-first deterministic tools for NorthCause investigations.")
-    parser.add_argument("--version", action="version", version="CausePath 0.1.0")
+    parser = argparse.ArgumentParser(prog="northcause", description="Local-first deterministic tools for NorthCause investigations.")
+    parser.add_argument("--version", action="version", version="NorthCause CLI 0.1.0")
     sub = parser.add_subparsers(dest="group", required=True)
 
     doctor = sub.add_parser("doctor", help="Check the NorthCause API health endpoint")
@@ -108,7 +108,7 @@ def run(args: argparse.Namespace) -> int:
     elif args.group == "otel":
         token = os.getenv("NORTHCAUSE_OTEL_INGEST_TOKEN", "").strip()
         if not token:
-            raise ValueError("Set NORTHCAUSE_OTEL_INGEST_TOKEN in your shell; CausePath never saves this token in config")
+            raise ValueError("Set NORTHCAUSE_OTEL_INGEST_TOKEN in your shell; NorthCause CLI never saves this token in config")
         raw = read_bounded(args.file)
         payload = json.loads(raw.decode("utf-8"))
         if not isinstance(payload, dict) or not isinstance(payload.get("resourceSpans"), list):
@@ -130,7 +130,7 @@ def main() -> None:
     try:
         code = run(_parser().parse_args())
     except (OSError, UnicodeError, json.JSONDecodeError, ReplayInputError, ValueError, RuntimeError) as exc:
-        print(f"causepath: {exc}", file=sys.stderr)
+        print(f"northcause: {exc}", file=sys.stderr)
         code = 1
     raise SystemExit(code)
 

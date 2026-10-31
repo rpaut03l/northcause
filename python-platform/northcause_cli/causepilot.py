@@ -13,8 +13,8 @@ MAX_CONTEXT = 48_000
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="causepilot", description="Optional BYO-model assistant for evidence-led NorthCause work.")
-    parser.add_argument("--version", action="version", version="CausePilot 0.1.0")
+    parser = argparse.ArgumentParser(prog="northcause-ai", description="Optional BYO-model assistant for evidence-led NorthCause work.")
+    parser.add_argument("--version", action="version", version="NorthCause AI CLI 0.1.0")
     sub = parser.add_subparsers(dest="action", required=True)
     doctor = sub.add_parser("doctor", help="Check whether an AI endpoint is configured (no request is sent)")
     doctor.add_argument("--base-url")
@@ -66,7 +66,7 @@ def _instruction(action: str) -> str:
 def _call_model(base: str, model: str, instruction: str, context: str) -> str:
     key = os.getenv("NORTHCAUSE_AI_API_KEY", "").strip()
     if not key:
-        raise ValueError("Set NORTHCAUSE_AI_API_KEY in the current shell; CausePilot never persists credentials")
+        raise ValueError("Set NORTHCAUSE_AI_API_KEY in the current shell; NorthCause AI CLI never persists credentials")
     endpoint = api_base(base)
     parsed = urlparse(endpoint)
     if len(model) > 120 or not model.strip():
@@ -105,7 +105,7 @@ def main() -> None:
         print("DRAFT ONLY — review source evidence before using this output.\n")
         print(answer)
     except (OSError, UnicodeError, json.JSONDecodeError, ValueError, RuntimeError) as exc:
-        print(f"causepilot: {exc}", file=sys.stderr)
+        print(f"northcause-ai: {exc}", file=sys.stderr)
         raise SystemExit(1)
 
 
