@@ -11,6 +11,7 @@ from fastapi.templating import Jinja2Templates
 from .replay import evaluate_jsonl, ReplayInputError
 from .proofs import sign_record, verify_record, ensure_signing_key
 from .semantic import score_cases, SemanticJudgeError
+from .analysis import compute_regressions, build_timeline, rank_hypotheses, serialize_hypothesis
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = Path(os.getenv("NORTHCAUSE_DATA", ROOT / "var"))
@@ -56,6 +57,8 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_otel_spans_trace ON otel_spans(trace_id);
         CREATE TABLE IF NOT EXISTS github_deliveries(delivery_id TEXT PRIMARY KEY,event TEXT NOT NULL,repository TEXT NOT NULL,ref TEXT,before_sha TEXT,after_sha TEXT,environment TEXT,status TEXT,created TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS semantic_runs(id TEXT PRIMARY KEY,user_id TEXT NOT NULL,summary TEXT NOT NULL,created TEXT NOT NULL,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE);
+        CREATE TABLE IF NOT EXISTS hypotheses(id TEXT PRIMARY KEY,incident_id TEXT NOT NULL,statement TEXT NOT NULL,confidence REAL NOT NULL,evidence TEXT NOT NULL,counterevidence TEXT NOT NULL,status TEXT NOT NULL,generator TEXT NOT NULL,created TEXT NOT NULL,FOREIGN KEY(incident_id) REFERENCES incidents(id) ON DELETE CASCADE);
+        CREATE INDEX IF NOT EXISTS idx_hypotheses_incident ON hypotheses(incident_id);
         CREATE TABLE IF NOT EXISTS proof_records(id TEXT PRIMARY KEY,replay_id TEXT NOT NULL UNIQUE,incident_id TEXT NOT NULL,user_id TEXT NOT NULL,payload TEXT NOT NULL,payload_sha256 TEXT NOT NULL,previous_hash TEXT NOT NULL,record_hash TEXT NOT NULL,signature TEXT NOT NULL,public_key TEXT NOT NULL,key_fingerprint TEXT NOT NULL,created TEXT NOT NULL,FOREIGN KEY(replay_id) REFERENCES replay_runs(id) ON DELETE CASCADE,FOREIGN KEY(incident_id) REFERENCES incidents(id) ON DELETE CASCADE,FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE);
         """)
         # Keep existing local pilot databases usable after adding environment context.
@@ -345,7 +348,35 @@ def proof_download(request: Request,proof_id: str):
 @app.get("/api/incidents/{incident_id}/signals")
 def incident_signals(request: Request,incident_id: str):
     user=require_user(request); incident=get_incident(incident_id,user)
-    return {"incident_id":incident_id,**matched_signals(incident),"note":"Signals are time- and service-matched context, not a verified causal finding."}
+    signals=matched_signals(incident)
+    return {"incident_id":incident_id,**signals,"regressions":compute_regressions(signals["traces"],incident["created"]),"note":"Signals are time- and service-matched context, not a verified causal finding."}
+
+def _latest_claims(incident_id: str) -> list[dict]:
+    with db() as c:
+        latest=c.execute("SELECT result FROM investigations WHERE incident_id=? ORDER BY created DESC LIMIT 1",(incident_id,)).fetchone()
+    if not latest: return []
+    try: return json.loads(latest["result"]).get("claims",[]) or []
+    except (TypeError,ValueError,json.JSONDecodeError): return []
+
+@app.post("/app/incidents/{incident_id}/hypotheses")
+def hypotheses_generate(request: Request,incident_id: str,token:Annotated[str,Form()]=""):
+    u=check_csrf(request,token);incident=get_incident(incident_id,u)
+    signals=matched_signals(incident)
+    regressions=compute_regressions(signals["traces"],incident["created"])
+    ranked=rank_hypotheses(incident,regressions,signals["git_events"],_latest_claims(incident_id))
+    with db() as c:
+        c.execute("DELETE FROM hypotheses WHERE incident_id=?",(incident_id,))
+        for h in ranked:
+            ev,counter=serialize_hypothesis(h)
+            c.execute("INSERT INTO hypotheses VALUES(?,?,?,?,?,?,?,?,?)",(uid("hyp"),incident_id,h["statement"],h["confidence"],ev,counter,h["status"],h["generator"],now()))
+    audit(u["id"],"incident.hypotheses",incident_id,{"count":len(ranked),"top_generator":ranked[0]["generator"]})
+    return RedirectResponse(f"/app/incidents/{incident_id}#hypotheses",303)
+
+@app.get("/api/incidents/{incident_id}/hypotheses")
+def hypotheses_api(request: Request,incident_id: str):
+    user=require_user(request);get_incident(incident_id,user)
+    with db() as c: rows=c.execute("SELECT * FROM hypotheses WHERE incident_id=? ORDER BY confidence DESC,created DESC",(incident_id,)).fetchall()
+    return {"incident_id":incident_id,"hypotheses":[{**dict(r),"evidence":json.loads(r["evidence"]),"counterevidence":json.loads(r["counterevidence"])} for r in rows],"note":"Deterministic, rule-ranked hypotheses for human review. An inconclusive outcome is a valid result."}
 @app.get("/login",response_class=HTMLResponse)
 def login(request: Request):
     token=secrets.token_urlsafe(24)
@@ -425,7 +456,11 @@ def incident_detail(request: Request,incident_id: str):
         drafts=c.execute("SELECT * FROM drafts WHERE incident_id=? ORDER BY created DESC",(incident_id,)).fetchall()
         replay_runs=c.execute("SELECT id,summary,created FROM replay_runs WHERE incident_id=? AND user_id=? ORDER BY created DESC LIMIT 10",(incident_id,u["id"])).fetchall()
     signals=matched_signals(incident)
-    return page(request,"incident.html",title=incident["title"],incident=incident,evidence=evidence,investigations=investigations,drafts=drafts,replay_runs=replay_runs,signals=signals)
+    regressions=compute_regressions(signals["traces"],incident["created"])
+    timeline=build_timeline(incident,evidence,signals["git_events"],regressions)
+    with db() as c:
+        hypotheses=[{**dict(r),"evidence":json.loads(r["evidence"]),"counterevidence":json.loads(r["counterevidence"])} for r in c.execute("SELECT * FROM hypotheses WHERE incident_id=? ORDER BY confidence DESC,created DESC",(incident_id,)).fetchall()]
+    return page(request,"incident.html",title=incident["title"],incident=incident,evidence=evidence,investigations=investigations,drafts=drafts,replay_runs=replay_runs,signals=signals,regressions=regressions,timeline=timeline,hypotheses=hypotheses)
 
 @app.get("/app/incidents/{incident_id}/replay",response_class=HTMLResponse)
 def replay_page(request: Request,incident_id: str):
