@@ -23,7 +23,7 @@
   </g>
   <g transform="translate(872 172)">
     <rect x="-43" y="-27" width="209" height="209" rx="42" fill="#f2f5ff" stroke="#e0e8fb" stroke-width="2"/>
-    <g transform="translate(860 153) scale(1.35)">
+    <g transform="translate(-29 -17) scale(1.2)">
       <path d="M30 132V43L112 129V42" fill="none" stroke="url(#mark)" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
       <path d="M112 17L120 37L112 32L104 37Z" fill="#715BFF"/><circle cx="30" cy="132" r="7" fill="#155EEF"/>
     </g>
