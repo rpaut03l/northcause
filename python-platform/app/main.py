@@ -107,7 +107,12 @@ async def security(request: Request, call_next):
 def page(request: Request, name: str, **ctx):
     token = csrf(request)
     active = {"/product": "product", "/evidence-loop": "evidence_loop", "/security": "security", "/docs": "docs", "/pricing": "pricing", "/cloud-shell": "cloud_shell"}.get(request.url.path, "")
-    return templates.TemplateResponse(request=request,name=name,context={"user":request.state.user,"csrf":token,"csrf_token":token,"active":active,**ctx})
+    from urllib.parse import quote
+    public_url = os.getenv("NORTHCAUSE_PUBLIC_URL", "https://northcause.com").rstrip("/")
+    share_url = public_url + "/"
+    share_message = "NorthCause.com — Find it. Fix it. Prove it. Investigate AI production incidents with connected evidence. " + share_url
+    whatsapp_share_url = "https://wa.me/?text=" + quote(share_message, safe="")
+    return templates.TemplateResponse(request=request,name=name,context={"user":request.state.user,"csrf":token,"csrf_token":token,"active":active,"public_url":public_url,"share_url":share_url,"whatsapp_share_url":whatsapp_share_url,**ctx})
 def require_user(request: Request):
     user=request.state.user
     if not user: raise HTTPException(401,"Sign-in required")

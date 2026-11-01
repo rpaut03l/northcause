@@ -6,7 +6,9 @@ The local Python pilot now includes Reliability Replay: a small, deterministic p
 
 The product direction, customer gap hypothesis, architecture, pricing assumptions, and delivery roadmap are documented in [`docs/northcause-product-blueprint.md`](docs/northcause-product-blueprint.md). This is a proposal and is not a description of shipped integrations.
 
-NorthCause is a product of **Narmadaya Innovations Pvt Ltd**. Visit the parent company at [narmadaya.com](https://narmadaya.com/).
+NorthCause is a product of **Narmadya Innovations Pvt Ltd**. Visit the parent company at [narmadya.com](https://narmadya.com/).
+
+Public brand, browser-tab, and social-sharing behavior—including the NorthCause.com canonical URL, WhatsApp share action, and 1200 × 630 preview image—is documented in [`docs/brand-and-sharing.md`](docs/brand-and-sharing.md).
 
 This repository includes a standalone Python/FastAPI pilot under [`python-platform/`](python-platform/README.md). The public pages explain the workflow; the local workspace supports incident records, development/staging/production context, bounded text evidence uploads, deterministic evidence scanning, human-reviewed remediation drafts, and an audit view.
 
